@@ -18,7 +18,7 @@ SLACK_WEBHOOK_URL = os.environ.get(
 SLACK_ATTACHMENTS = True if os.environ.get(
     'SLACK_ATTACHMENTS', 'False') == 'True' else app.config.get('SLACK_ATTACHMENTS', False)
 SLACK_CHANNEL = os.environ.get(
-    'SLACK_CHANNEL') or app.config.get('SLACK_CHANNEL', '')
+    'SLACK_CHANNEL') or app.config.get('SLACK_CHANNEL', [])
 SLACK_CHANNEL_ENV_MAP = os.environ.get(
     'SLACK_CHANNEL_ENV_MAP') or app.config.get('SLACK_CHANNEL_ENV_MAP', dict())
 ALERTA_USERNAME = os.environ.get(
@@ -54,7 +54,7 @@ class ServiceIntegration(PluginBase):
     def pre_receive(self, alert):
         return alert
 
-    def _slack_prepare_payload(self, alert, status=None, text=None):
+    def _slack_prepare_payload(self, alert, status=None, text=None, channel=None):
         summary = "*[%s] %s %s - _%s on %s_* <%s/#/alert/%s|%s>" % (
             (status if status else alert.status).capitalize(), alert.environment, alert.severity.capitalize(
             ), alert.event, alert.resource, DASHBOARD_URL,
@@ -66,7 +66,8 @@ class ServiceIntegration(PluginBase):
         else:
             color = '#00CC00'  # green
 
-        channel = SLACK_CHANNEL_ENV_MAP.get(alert.environment, SLACK_CHANNEL)
+        if channel == None:
+            channel = SLACK_CHANNEL_ENV_MAP.get(alert.environment, SLACK_CHANNEL)
 
         txt = "<%s/#/alert/%s|%s> %s - %s" % (DASHBOARD_URL, alert.get_id(
         ), alert.get_id(short=True), alert.event, text if text else alert.text)
@@ -90,11 +91,11 @@ class ServiceIntegration(PluginBase):
                     "fields": [
                         {"title": "Status", "value": (status if status else alert.status).capitalize(),
                          "short": True},
-                        {"title": "Environment",
-                            "value": alert.environment, "short": True},
-                        {"title": "Resource", "value": alert.resource, "short": True},
-                        {"title": "Services", "value": ", ".join(
-                            alert.service), "short": True}
+#                        {"title": "Environment",
+#                            "value": alert.environment, "short": True},
+                        {"title": "Resource", "value": alert.resource, "short": True}
+#                        {"title": "Services", "value": ", ".join(
+#                            alert.service), "short": True}
                     ]
                 }]
             }
@@ -102,6 +103,7 @@ class ServiceIntegration(PluginBase):
         return payload
 
     def post_receive(self, alert):
+        return alert
 
         if alert.repeat:
             return
@@ -122,8 +124,15 @@ class ServiceIntegration(PluginBase):
         if SLACK_SEND_ON_ACK == False or status not in ['ack', 'assign']:
             return
 
-        payload = self._slack_prepare_payload(alert, status, text)
+        if not SLACK_CHANNEL:
+            payload = self._slack_prepare_payload(alert, status, text)
+            self.send_message(payload)
+        else:
+            for channel in SLACK_CHANNEL:
+                payload = self._slack_prepare_payload(alert, status, text, channel)
+                self.send_message(payload)
 
+    def send_message(self, payload):
         LOG.debug('Slack payload: %s', payload)
         try:
             r = requests.post(SLACK_WEBHOOK_URL,
@@ -132,3 +141,4 @@ class ServiceIntegration(PluginBase):
             raise RuntimeError("Slack connection error: %s", e)
 
         LOG.debug('Slack response: %s', r.status_code)
+

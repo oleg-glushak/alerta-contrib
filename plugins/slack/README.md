@@ -10,13 +10,14 @@ For help, join [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https:
 Installation
 ------------
 
-Clone the GitHub repo and run:
+#Clone the GitHub repo and run:
+#
+#    $ python setup.py install
+#
+Install remotely from GitHub run:
 
-    $ python setup.py install
 
-Or, to install remotely from GitHub run:
-
-    $ pip install git+https://github.com/alerta/alerta-contrib.git#subdirectory=plugins/slack
+    $ pip install git+https://github.com/oleg-glushak/alerta-contrib.git#subdirectory=plugins/slack
 
 Note: If Alerta is installed in a python virtual environment then plugins
 need to be installed into the same environment for Alerta to dynamically
@@ -40,7 +41,7 @@ for your Slack channel and adding the following configuration settings to `alert
 ```python
 SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX'
 SLACK_ATTACHMENTS = True  # default=False
-SLACK_CHANNEL = '' # if empty then uses channel from incoming webhook configuration
+SLACK_CHANNEL = [] # if empty then uses channel from incoming webhook configuration
 SLACK_CHANNEL_ENV_MAP = { 'Production' : '#alert-prod' } # Default=None (optionnal) Allow to specify a channel on a per-environment basis. SLACK_CHANNEL is used a default value
 
 ICON_EMOJI = '' # default :rocket:
