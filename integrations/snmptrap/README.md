@@ -27,7 +27,7 @@ Clone the GitHub repo and run:
 
 Or, to install remotely from GitHub run:
 
-    $ pip install git+https://github.com/alerta/alerta-contrib.git#subdirectory=integrations/snmptrap
+    $ pip install git+https://github.com/oleg-glushak/alerta-contrib.git#subdirectory=integrations/snmptrap
 
 Configuration
 -------------
